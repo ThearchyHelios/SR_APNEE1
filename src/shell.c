@@ -2,7 +2,7 @@
  * @Author: ThearchyHelios work@thearchyhelios.com
  * @Date: 2025-02-13 08:17:24
  * @LastEditors: ThearchyHelios work@thearchyhelios.com
- * @LastEditTime: 2025-02-13 09:48:58
+ * @LastEditTime: 2025-02-13 10:24:21
  * @FilePath: /APNEE1/src/shell.c
  * @Description:
  */
@@ -68,14 +68,30 @@ int main()
 				exit(1);
 				break;
 			case 0:
-				execvp(cmd[0], cmd);
-				if (l->out)
+				if (l->in)   //redirection de l'entree standard
 				{
-					printf("out: %s\n", l->out);
-					int fd = open(l->out, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-					dup2(fd, STDOUT_FILENO);
+					int fd = open(l->in, O_RDONLY, 0644);
+					if (fd < 0)
+					{
+						perror("Error opening input file");
+						exit(1);
+					}
+					Dup2(fd, STDIN_FILENO);
 					close(fd);
 				}
+
+				if (l->out) //redirection de la sortie standard
+				{
+					int fd = open(l->out, O_WRONLY | O_CREAT, 0644);
+					if (fd < 0)
+					{
+						perror("Error opening output file");
+						exit(1);
+					}
+					Dup2(fd, STDOUT_FILENO);
+					close(fd);
+				}
+				execvp(cmd[0], cmd);
 				exit(0);
 				break;
 			default:
