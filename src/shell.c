@@ -2,7 +2,7 @@
  * @Author: ThearchyHelios work@thearchyhelios.com
  * @Date: 2025-02-13 08:17:24
  * @LastEditors: ThearchyHelios work@thearchyhelios.com
- * @LastEditTime: 2025-02-13 10:24:21
+ * @LastEditTime: 2025-02-13 11:03:34
  * @FilePath: /APNEE1/src/shell.c
  * @Description:
  */
@@ -91,7 +91,12 @@ int main()
 					Dup2(fd, STDOUT_FILENO);
 					close(fd);
 				}
-				execvp(cmd[0], cmd);
+				int code = execvp(cmd[0], cmd);
+				if (code == -1){
+					perror("execvp error ");
+					exit(-1);
+				}
+				// printf("code: %d", code);
 				exit(0);
 				break;
 			default:
