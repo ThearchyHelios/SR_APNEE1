@@ -2,7 +2,7 @@
  * @Author: ThearchyHelios work@thearchyhelios.com
  * @Date: 2025-02-13 08:17:24
  * @LastEditors: ThearchyHelios work@thearchyhelios.com
- * @LastEditTime: 2025-02-13 11:03:34
+ * @LastEditTime: 2025-02-13 11:15:48
  * @FilePath: /APNEE1/src/shell.c
  * @Description:
  */
@@ -16,9 +16,34 @@
 #include "csapp.h"
 #include <string.h>
 
+#define BUFSIZE 1024
+
+char *gerer_tube(char *buffin, char *buffout)
+{
+	int fd[2];
+	pipe(fd);
+	pid_t child_pid = Fork();
+	int bytesin, bytesout;
+	bytesin = strlen(buffin);
+	if (child_pid != 0)
+	{ /* pere */
+		Close(fd[0]);
+		bytesout = write(fd[1], buffout, strlen(buffout) + 1);
+		printf("[%d]: write %d bytes, send %s to my child\n",
+					 getpid(), bytesout, buffout);
+	}
+	else
+	{ /* fils */
+		Close(fd[1]);
+		bytesin = read(fd[0], buffin, BUFSIZE);
+		printf("[%d](fils): read %d bytes, my bufin is {%s} \n",
+					 getpid(), bytesin, buffin);
+	}
+	return buffout;
+}
+
 int main()
 {
-
 	struct cmdline *l;
 	while (1)
 	{
@@ -58,6 +83,16 @@ int main()
 				exit(0);
 			}
 
+			// gerer tube
+				if (l->seq[i + 1] != 0)
+				{
+					char buffin[BUFSIZE];
+					char buffout[BUFSIZE];
+					strcpy(buffin, l->seq[i]);
+					strcpy(buffout, l->seq[i+1]);
+					gerer_tube(buffin, buffout);
+				}
+
 			pid_t pid;
 			pid = Fork();
 
@@ -68,7 +103,7 @@ int main()
 				exit(1);
 				break;
 			case 0:
-				if (l->in)   //redirection de l'entree standard
+				if (l->in) // redirection de l'entree standard
 				{
 					int fd = open(l->in, O_RDONLY, 0644);
 					if (fd < 0)
@@ -80,7 +115,7 @@ int main()
 					close(fd);
 				}
 
-				if (l->out) //redirection de la sortie standard
+				if (l->out) // redirection de la sortie standard
 				{
 					int fd = open(l->out, O_WRONLY | O_CREAT, 0644);
 					if (fd < 0)
@@ -92,11 +127,11 @@ int main()
 					close(fd);
 				}
 				int code = execvp(cmd[0], cmd);
-				if (code == -1){
+				if (code == -1)
+				{
 					perror("execvp error ");
 					exit(-1);
 				}
-				// printf("code: %d", code);
 				exit(0);
 				break;
 			default:
