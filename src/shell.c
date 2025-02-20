@@ -2,7 +2,7 @@
  * @Author: ThearchyHelios work@thearchyhelios.com
  * @Date: 2025-02-13 08:17:24
  * @LastEditors: ThearchyHelios work@thearchyhelios.com
- * @LastEditTime: 2025-02-14 18:21:07
+ * @LastEditTime: 2025-02-20 10:04:22
  * @FilePath: /APNEE1/src/shell.c
  * @Description:
  */
@@ -57,8 +57,14 @@ int main()
 		{
 			continue;
 		}
+		int backgroundList[nb_cmd];
 
-		int pipefd[nb_cmd - 1][2]; // 用于存储管道的文件描述符
+		for (i = 0; i < nb_cmd; i++)
+		{
+			backgroundList[i] = 0;
+		}
+
+		int pipefd[nb_cmd - 1][2];
 		for (i = 0; i < nb_cmd - 1; i++)
 		{
 			if (pipe(pipefd[i]) == -1)
@@ -76,13 +82,27 @@ int main()
 			const char **cmd = l->seq[i];
 			printf("seq[%d]: ", i);
 
+			// determiner si le processus est en arriere-plan ou non
+			int last = 0;
+			while (cmd[last] != 0)
+			{
+				last++;
+			}
+
+			if (last > 0 && strcmp(cmd[last - 1], "&") == 0)
+			{
+				printf("background\n");
+				backgroundList[i] = 1;
+				cmd[last - 1] = NULL;
+			}
+
+			// determiner si la commande est "quit"
 			if (strcmp(cmd[0], "quit") == 0)
 			{
 				printf(" je vais quitter");
 				exit(0);
 			}
 
-			// pid_t pid;
 			pids[i] = Fork();
 
 			switch (pids[i])
@@ -92,7 +112,7 @@ int main()
 				exit(1);
 				break;
 			case 0:
-				if (i > 0) // redirection de l'entree standard
+				if (i > 0) // detecter si il est pas le premier commande
 				{
 					int in_pipe = pipefd[i - 1][0];
 					Dup2(in_pipe, STDIN_FILENO);
@@ -109,7 +129,7 @@ int main()
 					Dup2(fd, STDIN_FILENO);
 					close(fd);
 				}
-				if (i < nb_cmd - 1) // redirection de la sortie standard
+				if (i < nb_cmd - 1) // detecter si il est pas le dernier commande
 				{
 					int out_pipe = pipefd[i][1];
 					Dup2(out_pipe, STDOUT_FILENO);
@@ -150,6 +170,10 @@ int main()
 				{
 					close(pipefd[i][1]);
 				}
+				if (backgroundList[i])
+				{
+					printf("[%d] %s running in background\n", pids[i], cmd[0]);
+				}
 				break;
 			}
 			for (j = 0; cmd[j] != 0; j++)
@@ -160,11 +184,14 @@ int main()
 		}
 		for (i = 0; i < nb_cmd; i++)
 		{
-			int status;
-			waitpid(pids[i], &status, 0);
-			if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-			{
-				printf("Command failed with status %d\n", WEXITSTATUS(status));
+			if (!backgroundList[i])
+			{ //executer le wait lorsqu'il n'y a pas d'indication de &
+				int status;
+				waitpid(pids[i], &status, 0);
+				if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+				{
+					printf("Command failed with status %d\n", WEXITSTATUS(status));
+				}
 			}
 		}
 	}
