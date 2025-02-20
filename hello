@@ -1,0 +1,11 @@
+'hello2'
+
+-rwxr--r--@ 1 yilunjiang  staff    484 Feb 15  2018 Makefile
+-rw-r--r--  1 yilunjiang  staff      0 Feb 20 11:19 hello
+-r--------@ 1 yilunjiang  staff     17 Feb 13 10:45 interdit.txt
+-rwxr--r--@ 1 yilunjiang  staff   5143 Feb 15  2018 sdriver.pl
+-rwxr-xr-x  1 yilunjiang  staff  65800 Feb 20 11:14 shell
+drwxr-xr-x@ 8 yilunjiang  staff    256 Feb 20 10:02 src
+drwxr-xr-x@ 8 yilunjiang  staff    256 Feb 20 10:43 tests
+-rwxr--r--@ 1 yilunjiang  staff     61 Feb 13 10:39 titi.txt
+-rw-r--r--@ 1 yilunjiang  staff    367 Feb 13 10:38 toto.txt

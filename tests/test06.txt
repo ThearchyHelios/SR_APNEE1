@@ -1,0 +1,4 @@
+#Teste 06
+# teste sur pluisieurs pipe
+
+ls -l | grep Makefile > out1 | wc & | ps

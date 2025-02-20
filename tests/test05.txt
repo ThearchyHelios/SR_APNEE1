@@ -1,0 +1,4 @@
+# Teste 05 
+# le teste sur le processus en arriere plan
+ls -l | wc &
+ps -ax

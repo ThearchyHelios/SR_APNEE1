@@ -2,7 +2,7 @@
  * @Author: ThearchyHelios work@thearchyhelios.com
  * @Date: 2025-02-13 08:17:24
  * @LastEditors: ThearchyHelios work@thearchyhelios.com
- * @LastEditTime: 2025-02-20 10:04:22
+ * @LastEditTime: 2025-02-20 11:39:23
  * @FilePath: /APNEE1/src/shell.c
  * @Description:
  */
@@ -18,9 +18,14 @@
 
 #define BUFSIZE 1024
 
+void sigchld_handler(int sig) {
+    while (waitpid(-1, NULL, WNOHANG) > 0);
+}
+
 int main()
 {
 	struct cmdline *l;
+	signal(SIGCHLD, sigchld_handler);
 	while (1)
 	{
 		int i, j;
@@ -47,7 +52,7 @@ int main()
 		if (l->out)
 			printf("out: %s\n", l->out);
 
-		// 确定命令的数量
+		// Compter les commandes
 		int nb_cmd = 0;
 		while (l->seq[nb_cmd] != 0)
 		{
@@ -57,12 +62,8 @@ int main()
 		{
 			continue;
 		}
-		int backgroundList[nb_cmd];
 
-		for (i = 0; i < nb_cmd; i++)
-		{
-			backgroundList[i] = 0;
-		}
+		int background = 0;
 
 		int pipefd[nb_cmd - 1][2];
 		for (i = 0; i < nb_cmd - 1; i++)
@@ -75,6 +76,17 @@ int main()
 		}
 
 		pid_t pids[nb_cmd];
+
+		int lastChar = 0;
+		while (l->seq[nb_cmd - 1][lastChar] != 0)
+		{
+			lastChar++;
+		}
+		if (strcmp(l->seq[nb_cmd - 1][lastChar - 1], "&") == 0)
+		{
+			background = 1;
+			l->seq[nb_cmd - 1][lastChar - 1] = NULL;
+		}
 
 		/* Display each command of the pipe */
 		for (i = 0; l->seq[i] != 0; i++)
@@ -91,9 +103,11 @@ int main()
 
 			if (last > 0 && strcmp(cmd[last - 1], "&") == 0)
 			{
-				printf("background\n");
-				backgroundList[i] = 1;
-				cmd[last - 1] = NULL;
+				if (i != nb_cmd - 1) // si le symbole & est dans une commande autre que la derniere
+				{
+					printf("Error: & must be at the end of the command\n");
+					break;
+				}
 			}
 
 			// determiner si la commande est "quit"
@@ -146,7 +160,7 @@ int main()
 					Dup2(fd, STDOUT_FILENO);
 					close(fd);
 				}
-				// 关闭所有管道
+				// Fermer tous les pipes en cas de mauvaise gestion
 				for (j = 0; j < nb_cmd - 1; j++)
 				{
 					close(pipefd[j][0]);
@@ -160,17 +174,17 @@ int main()
 				}
 				break;
 			default:
-				// 如果不是第一个命令，关闭上一个管道的读端
+				// Si ce n'est pas la premiere commande, on ferme le read de derniere pipe 
 				if (i > 0)
 				{
 					close(pipefd[i - 1][0]);
 				}
-				// 如果不是最后一个命令，关闭当前管道的写端
+				// Si ce n'est pas la derniere commande, on ferme le read de derniere pipe 
 				if (i < nb_cmd - 1)
 				{
 					close(pipefd[i][1]);
 				}
-				if (backgroundList[i])
+				if (background)
 				{
 					printf("[%d] %s running in background\n", pids[i], cmd[0]);
 				}
@@ -184,7 +198,7 @@ int main()
 		}
 		for (i = 0; i < nb_cmd; i++)
 		{
-			if (!backgroundList[i])
+			if (!background)
 			{ //executer le wait lorsqu'il n'y a pas d'indication de &
 				int status;
 				waitpid(pids[i], &status, 0);
