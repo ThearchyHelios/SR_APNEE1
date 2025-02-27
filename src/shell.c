@@ -2,7 +2,7 @@
  * @Author: ThearchyHelios work@thearchyhelios.com
  * @Date: 2025-02-13 08:17:24
  * @LastEditors: ThearchyHelios work@thearchyhelios.com
- * @LastEditTime: 2025-02-20 11:39:23
+ * @LastEditTime: 2025-02-27 08:44:53
  * @FilePath: /APNEE1/src/shell.c
  * @Description:
  */
@@ -169,7 +169,7 @@ int main()
 
 				if (execvp(cmd[0], cmd) == -1)
 				{
-					perror("execvp error");
+					printf("commande not found %s\n", cmd[0]);
 					exit(1);
 				}
 				break;
